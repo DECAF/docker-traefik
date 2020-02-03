@@ -122,7 +122,7 @@ steps:
     environment:
       DOCKER_BUILDKIT: 1
     settings:
-      repo: decaf/docker-api
+      repo: decaf/docker-traefik
       username: devopsdecafde
       password:
         from_secret: docker_devopsdecafde_password
