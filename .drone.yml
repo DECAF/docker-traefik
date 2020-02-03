@@ -1,0 +1,147 @@
+---
+kind: pipeline
+name: default
+
+concurrency:
+  limit: 1
+
+steps:
+  - name: git
+    depends_on:
+      - clone
+    image: docker:git
+    pull: always
+    commands:
+      - git fetch --tags
+    when:
+      branch:
+        - develop
+        - master
+        - release/*
+        - feature/*
+      event:
+        - push
+
+  - name: ci_info
+    depends_on:
+      - git
+    image: docker:git
+    pull: always
+    commands:
+      - |
+        export VERSION="$(git describe --tags)"
+        echo "DRONE_BUILD_EVENT........: $${DRONE_BUILD_EVENT}"
+        echo "DRONE_BUILD_NUMBER.......: $${DRONE_BUILD_NUMBER}"
+        echo "DRONE_BRANCH.............: $${DRONE_BRANCH}"
+        echo "DRONE_COMMIT.............: $${DRONE_COMMIT}"
+        echo "DRONE_COMMIT_MESSAGE.....: $${DRONE_COMMIT_MESSAGE}"
+        echo "DRONE_COMMIT_AUTHOR_NAME.: $${DRONE_COMMIT_AUTHOR_NAME}"
+        echo "DRONE_COMMIT_AUTHOR_EMAIL: $${DRONE_COMMIT_AUTHOR_EMAIL}"
+        echo "DRONE_TAG................: $${DRONE_TAG}"
+        echo "DRONE_SYSTEM_VERSION.....: $${DRONE_SYSTEM_VERSION}"
+        echo "VERSION..................: $${VERSION}"
+        echo ""
+        echo "------------------------------------------------------"
+        echo "ENVIRONMENT"
+        echo "------------------------------------------------------"
+        set
+
+  - name: docker_tag_develop
+    depends_on:
+      - ci_info
+    image: docker:git
+    commands:
+      - echo "develop" > .tags
+    when:
+      branch:
+        - develop
+      event:
+        - push
+        - cron
+
+  - name: docker_tag_release
+    depends_on:
+      - ci_info
+    image: docker:git
+    commands:
+      - echo "edge" > .tags
+    when:
+      branch:
+        - release/*
+      event:
+        - push
+        - cron
+
+  - name: docker_tag_master
+    depends_on:
+      - ci_info
+    image: docker:git
+    commands:
+      - export VERSION="$(git describe --tags)"
+      - echo $VERSION
+      - export VTAG="$(echo $VERSION | cut -d '-' -f 1)"
+      - export TAG="$(echo $VTAG | sed -e 's/v//g')"
+      - echo -n "" > .tags
+      - if [ -n "$TAG" ]; then echo -n "$TAG," >> .tags; fi
+      - echo "edge,latest" >> .tags
+      - cat .tags
+    when:
+      branch:
+        - master
+      event:
+        - push
+        - cron
+
+  - name: docker_cache_prepare
+    depends_on:
+      - docker_tag_develop
+      - docker_tag_release
+      - docker_tag_master
+    image: docker:git
+    volumes:
+      - name: cache
+        path: /srv/cache
+    commands:
+      - mkdir -p /srv/cache/docker
+    when:
+      branch:
+        - develop
+        - master
+        - release/*
+      event:
+        - push
+        - cron
+
+  - name: docker_publish
+    depends_on:
+      - docker_cache_prepare
+    image: plugins/docker
+    volumes:
+      - name: cache
+        path: /srv/cache
+    environment:
+      DOCKER_BUILDKIT: 1
+    settings:
+      repo: decaf/docker-traefik
+      username: devopsdecafde
+      password:
+        from_secret: docker_devopsdecafde_password
+      dockerfile: Dockerfile
+      storage_path: /srv/cache/docker/${DRONE_REPO_NAMESPACE}/${DRONE_REPO_NAME}
+      use_cache: true
+    when:
+      branch:
+        - develop
+        - master
+        - release/*
+      event:
+        - push
+        - cron
+
+volumes:
+  - name: cache
+    host:
+      path: /srv/cache
+  - name: docker
+    host:
+      path: /var/run/docker.sock
