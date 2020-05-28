@@ -21,6 +21,7 @@ steps:
         - feature/*
       event:
         - push
+        - cron
 
   - name: ci_info
     depends_on:
@@ -64,7 +65,7 @@ steps:
       - ci_info
     image: docker:git
     commands:
-      - echo "edge" > .tags
+      - echo "develop,edge" > .tags
     when:
       branch:
         - release/*
@@ -83,7 +84,7 @@ steps:
       - export TAG="$(echo $VTAG | sed -e 's/v//g')"
       - echo -n "" > .tags
       - if [ -n "$TAG" ]; then echo -n "$TAG," >> .tags; fi
-      - echo "edge,latest" >> .tags
+      - echo "develop,edge,latest" >> .tags
       - cat .tags
     when:
       branch:
