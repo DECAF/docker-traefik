@@ -14,13 +14,13 @@
 
   [entryPoints.https]
     address = ":443"
-#  [entryPoints.https.http.tls]
-#    certResolver = "letseencrypt"
+  [entryPoints.https.http.tls]
+    certResolver = "letseencrypt"
 
   [entryPoints.traefik]
     address = ":55555"
-#  [entryPoints.traefik.http.tls]
-#    certResolver = "letseencrypt"
+  [entryPoints.traefik.http.tls]
+    certResolver = "letseencrypt"
 
 [certificatesResolvers.letseencrypt.acme]
   storage = "/acme/acme.json"
