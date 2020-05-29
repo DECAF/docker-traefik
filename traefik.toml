@@ -9,17 +9,22 @@
   exposedByDefault = false
 
 [entryPoints]
-  [entryPoints.web]
+  [entryPoints.http]
     address = ":80"
 
-  [entryPoints.websecure]
+  [entryPoints.https]
     address = ":443"
-  [entryPoints.websecure.http.tls]
-    certResolver = "myresolver"
+  [entryPoints.https.http.tls]
+    certResolver = "letseencrypt"
 
-[certificatesResolvers.myresolver.acme]
+  [entryPoints.traefik]
+    address = ":55555"
+  [entryPoints.traefik.http.tls]
+    certResolver = "letseencrypt"
+
+[certificatesResolvers.letseencrypt.acme]
   storage = "/acme/acme.json"
-  [certificatesResolvers.myresolver.acme.tlsChallenge]
+  [certificatesResolvers.letseencrypt.acme.tlsChallenge]
 
 [api]
   dashboard = true
