@@ -1,4 +1,4 @@
-FROM traefik:v2.2
+FROM traefik
 
 COPY traefik.toml /etc/traefik/traefik.toml
 
