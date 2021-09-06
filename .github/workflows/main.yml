@@ -21,7 +21,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: decaf/docker-mariadb
+  IMAGE_NAME: decaf/docker-traefik
 
 jobs:
   build:
